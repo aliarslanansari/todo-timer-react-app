@@ -141,7 +141,8 @@ const CounterContainer = () => {
     },
   ])
   React.useEffect(() => {
-    setTaskList([
+    setTaskList((p) => [
+      ...p,
       {
         title: "Read The Almanack of NR",
         duration: 30,
