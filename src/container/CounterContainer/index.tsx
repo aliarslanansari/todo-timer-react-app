@@ -2,13 +2,13 @@ import React from "react"
 import styled, { css } from "styled-components"
 import AddIcon from "../../Assets/Icons/AddIcon"
 import PauseButtonIcon from "../../Assets/Icons/PauseButtonIcon"
+import { rippleEffect } from "../../utils/styleUtils"
 
 const PageContainer = styled.div`
   padding-top: 10px;
   padding-right: 20%;
   padding-left: 20%;
   background-color: #deeeff;
-  height: calc(100vh - 0px); // TODO: change this when header is added
   display: flex;
   align-content: center;
   flex-direction: column;
@@ -101,7 +101,7 @@ const IncDecButton = styled.h1`
 `
 
 const StyledPauseButtonIcon = styled(PauseButtonIcon)`
-  height: 2rem;
+  height: 30px;
 `
 const StyledAddIcon = styled(AddIcon)`
   margin-bottom: 0.5rem;
@@ -114,6 +114,7 @@ const AddTaskCard = styled.div`
   background-color: #d1ddeb;
   cursor: pointer;
   ${TaskCardStyle}
+  ${rippleEffect("#d1ddeb", "#deeeff")}
   &:hover {
     box-shadow: rgb(224 224 224) 0px 2px 3px;
   }
@@ -172,7 +173,7 @@ const CounterContainer = () => {
         </TaskCard>
       ))}
       <AddTaskCard>
-        <StyledAddIcon />
+        <StyledAddIcon height={20} />
         <span>ADD TASK</span>
       </AddTaskCard>
     </PageContainer>
