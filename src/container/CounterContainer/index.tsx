@@ -1,7 +1,19 @@
 import React from "react"
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  DropResult,
+} from "react-beautiful-dnd"
 import styled, { css } from "styled-components"
 import AddIcon from "../../Assets/Icons/AddIcon"
 import PauseButtonIcon from "../../Assets/Icons/PauseButtonIcon"
+import {
+  getItemStyle,
+  getListStyle,
+  reorder,
+  TaskItemType,
+} from "../../utils/dndUtils"
 import { rippleEffect } from "../../utils/styleUtils"
 
 const PageContainer = styled.div`
@@ -46,6 +58,7 @@ const TaskCardStyle = css`
   height: 4rem;
   width: 50%;
   display: flex;
+  cursor: pointer;
   align-items: center;
   flex-direction: column;
   margin: 0 0 1rem 0;
@@ -112,7 +125,6 @@ const StyledAddIcon = styled(AddIcon)`
 const AddTaskCard = styled.div`
   font-size: 0.7rem;
   background-color: #d1ddeb;
-  cursor: pointer;
   ${TaskCardStyle}
   ${rippleEffect("#d1ddeb", "#deeeff")}
   &:hover {
@@ -134,23 +146,34 @@ const DurationInput = styled.input`
 `
 
 const CounterContainer = () => {
-  const [taskList, setTaskList] = React.useState([
+  const [taskList, setTaskList] = React.useState<TaskItemType[]>([
     {
       title: "Reply Emails",
       duration: 10,
       completed: 120,
     },
+    {
+      title: "Read The Almanack of NR",
+      duration: 30,
+      completed: 0,
+    },
   ])
-  React.useEffect(() => {
-    setTaskList((p) => [
-      ...p,
-      {
-        title: "Read The Almanack of NR",
-        duration: 30,
-        completed: 0,
-      },
-    ])
-  }, [])
+
+  const onDragEnd = (result: DropResult): void => {
+    // dropped outside the list
+    if (!result.destination) {
+      return
+    }
+
+    const items: TaskItemType[] = reorder(
+      taskList,
+      result.source.index,
+      result.destination.index
+    )
+
+    setTaskList(items)
+  }
+
   return (
     <PageContainer>
       <Timer>00:00</Timer>
@@ -160,18 +183,44 @@ const CounterContainer = () => {
         <StyledPauseButtonIcon />
         <IncDecButton>-5</IncDecButton>
       </Controller>
-      {taskList.map((item) => (
-        <TaskCard>
-          <StyledTitle>{item.title}</StyledTitle>
-          <TaskController>
-            <DurationInput value={item.duration} type="number" />
-            <TaskControl>Delete</TaskControl>
-            <TaskControl>Reset</TaskControl>
-            <TaskControl>Complete</TaskControl>
-            <CompleteTimeDiv>00:40</CompleteTimeDiv>
-          </TaskController>
-        </TaskCard>
-      ))}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="droppable">
+          {(provided, snapshot): JSX.Element => (
+            <div
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              style={getListStyle(snapshot.isDraggingOver)}>
+              {taskList.map((item, index) => (
+                <Draggable
+                  key={item.title}
+                  draggableId={item.title}
+                  index={index}>
+                  {(provided, snapshot): JSX.Element => (
+                    <TaskCard
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={getItemStyle(
+                        snapshot.isDragging,
+                        provided.draggableProps.style
+                      )}>
+                      <StyledTitle>{item.title}</StyledTitle>
+                      <TaskController>
+                        <DurationInput value={item.duration} type="number" />
+                        <TaskControl>Delete</TaskControl>
+                        <TaskControl>Reset</TaskControl>
+                        <TaskControl>Complete</TaskControl>
+                        <CompleteTimeDiv>00:40</CompleteTimeDiv>
+                      </TaskController>
+                    </TaskCard>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
       <AddTaskCard>
         <StyledAddIcon height={20} />
         <span>ADD TASK</span>
