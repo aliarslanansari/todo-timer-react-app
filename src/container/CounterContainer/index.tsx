@@ -139,12 +139,16 @@ const CounterContainer = () => {
       duration: 10,
       completed: 120,
     },
-    {
-      title: "Read The Almanack of NR",
-      duration: 30,
-      completed: 0,
-    },
   ])
+  React.useEffect(() => {
+    setTaskList([
+      {
+        title: "Read The Almanack of NR",
+        duration: 30,
+        completed: 0,
+      },
+    ])
+  }, [])
   return (
     <PageContainer>
       <Timer>00:00</Timer>
