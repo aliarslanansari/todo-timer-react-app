@@ -105,7 +105,7 @@ const StyledPauseButtonIcon = styled(PauseButtonIcon)`
 `
 const StyledAddIcon = styled(AddIcon)`
   margin-bottom: 0.5rem;
-  height: 1rem;
+  width: 2rem;
   font-weight: 500;
 `
 
