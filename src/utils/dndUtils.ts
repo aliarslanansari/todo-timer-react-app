@@ -4,6 +4,7 @@ export interface TaskItemType {
   title: string
   duration: number
   completed: number
+  createdAt: string
 }
 
 export const reorder = (

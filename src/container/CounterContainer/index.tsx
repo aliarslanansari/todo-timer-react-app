@@ -1,3 +1,4 @@
+import { debounce } from "lodash"
 import React from "react"
 import {
   DragDropContext,
@@ -81,10 +82,18 @@ const TaskCard = styled.div`
   flex-direction: column;
 `
 
-const StyledTitle = styled.h2`
+const StyledTitle = styled.input`
   font-size: 1rem;
   padding: 0 0.5rem;
   margin: 0;
+  border: none;
+  background: none;
+  line-height: 2rem;
+  &:focus {
+    border: 1px dashed rgb(221, 221, 221);
+    outline: none;
+    border-radius: 6px;
+  }
 `
 
 const TaskController = styled.div`
@@ -151,11 +160,13 @@ const CounterContainer = () => {
       title: "Reply Emails",
       duration: 10,
       completed: 120,
+      createdAt: "2021-05-19T14:21:05.505Z",
     },
     {
       title: "Read The Almanack of NR",
       duration: 30,
       completed: 0,
+      createdAt: "2021-05-19T14:23:17.157Z",
     },
   ])
 
@@ -173,6 +184,10 @@ const CounterContainer = () => {
 
     setTaskList(items)
   }
+
+  const updateState = debounce((newState: TaskItemType[]) => {
+    setTaskList(newState)
+  }, 500)
 
   return (
     <PageContainer>
@@ -192,8 +207,8 @@ const CounterContainer = () => {
               style={getListStyle(snapshot.isDraggingOver)}>
               {taskList.map((item, index) => (
                 <Draggable
-                  key={item.title}
-                  draggableId={item.title}
+                  key={item.createdAt}
+                  draggableId={item.createdAt}
                   index={index}>
                   {(provided, snapshot): JSX.Element => (
                     <TaskCard
@@ -204,13 +219,48 @@ const CounterContainer = () => {
                         snapshot.isDragging,
                         provided.draggableProps.style
                       )}>
-                      <StyledTitle>{item.title}</StyledTitle>
+                      <StyledTitle
+                        onChange={(e) => {
+                          const newArr = taskList.map((item, ind) => {
+                            if (ind === index) {
+                              return {
+                                ...item,
+                                title: e.currentTarget?.value,
+                              }
+                            }
+                            return item
+                          })
+                          updateState(newArr)
+                        }}
+                        defaultValue={item.title || "no name"}
+                      />
                       <TaskController>
-                        <DurationInput value={item.duration} type="number" />
-                        <TaskControl>Delete</TaskControl>
-                        <TaskControl>Reset</TaskControl>
+                        <DurationInput
+                          defaultValue={item.duration}
+                          type="number"
+                        />
+                        <TaskControl
+                          onClick={() => {
+                            setTaskList((tasks) =>
+                              tasks.filter((i, ind) => ind !== index)
+                            )
+                          }}>
+                          Delete
+                        </TaskControl>
+                        <TaskControl
+                          onClick={() => {
+                            setTaskList((tasks) => {
+                              tasks[index] = {
+                                ...tasks[index],
+                                completed: 0,
+                              }
+                              return tasks
+                            })
+                          }}>
+                          Reset
+                        </TaskControl>
                         <TaskControl>Complete</TaskControl>
-                        <CompleteTimeDiv>00:40</CompleteTimeDiv>
+                        <CompleteTimeDiv>{item.completed}</CompleteTimeDiv>
                       </TaskController>
                     </TaskCard>
                   )}
@@ -221,7 +271,18 @@ const CounterContainer = () => {
           )}
         </Droppable>
       </DragDropContext>
-      <AddTaskCard>
+      <AddTaskCard
+        onClick={() => {
+          setTaskList((tasks) => [
+            ...tasks,
+            {
+              title: "New Task",
+              duration: 10,
+              completed: 120,
+              createdAt: new Date().toISOString(),
+            },
+          ])
+        }}>
         <StyledAddIcon height={20} />
         <span>ADD TASK</span>
       </AddTaskCard>
