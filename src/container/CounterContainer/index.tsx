@@ -1,4 +1,4 @@
-import { debounce } from "lodash"
+import { cloneDeep, debounce } from "lodash"
 import React from "react"
 import {
   DragDropContext,
@@ -116,10 +116,12 @@ const CompleteTimeDiv = styled.span`
   padding: 0.2rem;
   border-radius: 4px;
 `
-const IncDecButton = styled.h1`
+const IncDecButton = styled.button`
   margin: 0 2rem;
   font-size: 2rem;
   cursor: pointer;
+  background: none;
+  border: none;
 `
 
 const StyledPauseButtonIcon = styled(PauseButtonIcon)`
@@ -189,14 +191,25 @@ const CounterContainer = () => {
     setTaskList(newState)
   }, 500)
 
+  const handleTimeIncrementDecrement = (by: number) => () => {
+    const newTaskList = cloneDeep(taskList)
+    const duration = newTaskList[0].duration + by
+    newTaskList[0].duration = duration >= 0 ? duration : 0
+    setTaskList(newTaskList)
+  }
+
   return (
     <PageContainer>
       <Timer>00:00</Timer>
       <span>{taskList.length ? taskList[0].title : "no task"}</span>
       <Controller>
-        <IncDecButton>+5</IncDecButton>
+        <IncDecButton onClick={handleTimeIncrementDecrement(5)}>
+          +5
+        </IncDecButton>
         <StyledPauseButtonIcon />
-        <IncDecButton>-5</IncDecButton>
+        <IncDecButton onClick={handleTimeIncrementDecrement(-5)}>
+          -5
+        </IncDecButton>
       </Controller>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="droppable">
@@ -236,8 +249,20 @@ const CounterContainer = () => {
                       />
                       <TaskController>
                         <DurationInput
-                          defaultValue={item.duration}
+                          value={item.duration}
                           type="number"
+                          onChange={(e) => {
+                            const newArr = taskList.map((item, ind) => {
+                              if (ind === index) {
+                                return {
+                                  ...item,
+                                  duration: +e.currentTarget?.value,
+                                }
+                              }
+                              return item
+                            })
+                            updateState(newArr)
+                          }}
                         />
                         <TaskControl
                           onClick={() => {
