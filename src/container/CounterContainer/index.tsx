@@ -8,7 +8,7 @@ import {
 } from "react-beautiful-dnd"
 import styled, { css } from "styled-components"
 import AddIcon from "../../Assets/Icons/AddIcon"
-import PauseButtonIcon from "../../Assets/Icons/PauseButtonIcon"
+import PausePlayButton from "../../components/PausePlayButton"
 import {
   getItemStyle,
   getListStyle,
@@ -122,10 +122,7 @@ const IncDecButton = styled.button`
   cursor: pointer;
   background: none;
   border: none;
-`
-
-const StyledPauseButtonIcon = styled(PauseButtonIcon)`
-  height: 30px;
+  user-select: none; /* Standard */
 `
 const StyledAddIcon = styled(AddIcon)`
   margin-bottom: 0.5rem;
@@ -171,6 +168,8 @@ const CounterContainer = () => {
       createdAt: "2021-05-19T14:23:17.157Z",
     },
   ])
+  const [currentTimer, setCurrentTimer] = React.useState("00:00")
+  const [paused, setPaused] = React.useState(true)
 
   const onDragEnd = (result: DropResult): void => {
     // dropped outside the list
@@ -200,13 +199,13 @@ const CounterContainer = () => {
 
   return (
     <PageContainer>
-      <Timer>00:00</Timer>
+      <Timer>{currentTimer}</Timer>
       <span>{taskList.length ? taskList[0].title : "no task"}</span>
       <Controller>
         <IncDecButton onClick={handleTimeIncrementDecrement(5)}>
           +5
         </IncDecButton>
-        <StyledPauseButtonIcon />
+        <PausePlayButton paused={paused} onClick={() => setPaused((p) => !p)} />
         <IncDecButton onClick={handleTimeIncrementDecrement(-5)}>
           -5
         </IncDecButton>
