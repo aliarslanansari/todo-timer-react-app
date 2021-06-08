@@ -1,5 +1,6 @@
+import dayjs from "dayjs"
 import { cloneDeep, debounce } from "lodash"
-import React from "react"
+import React, { useCallback, useEffect } from "react"
 import {
   DragDropContext,
   Draggable,
@@ -9,6 +10,7 @@ import {
 import styled, { css } from "styled-components"
 import AddIcon from "../../Assets/Icons/AddIcon"
 import PausePlayButton from "../../components/PausePlayButton"
+import { secondsToHHmmss, secondsToMinutes } from "../../utils/dateTime"
 import {
   getItemStyle,
   getListStyle,
@@ -146,7 +148,7 @@ const DurationInput = styled.input`
   cursor: pointer;
   background: none;
   border: none;
-  width: 30px;
+  width: 40px;
   cursor: pointer;
   &:focus {
     border-radius: 6px;
@@ -157,19 +159,76 @@ const CounterContainer = () => {
   const [taskList, setTaskList] = React.useState<TaskItemType[]>([
     {
       title: "Reply Emails",
-      duration: 10,
-      completed: 120,
+      duration: 8,
+      completed: 0,
       createdAt: "2021-05-19T14:21:05.505Z",
     },
     {
       title: "Read The Almanack of NR",
-      duration: 30,
+      duration: 120,
       completed: 0,
       createdAt: "2021-05-19T14:23:17.157Z",
     },
   ])
-  const [currentTimer, setCurrentTimer] = React.useState("00:00")
+  const [currentTimer, setCurrentTimer] = React.useState(
+    secondsToHHmmss(taskList[0].duration)
+  )
+  const [intervalId, setIntervalId] = React.useState<NodeJS.Timeout>()
   const [paused, setPaused] = React.useState(true)
+
+  useEffect(() => {
+    setCurrentTimer(
+      secondsToHHmmss(taskList[0].duration - taskList[0].completed)
+    )
+  }, [taskList])
+
+  const updateState = debounce((newState: TaskItemType[]) => {
+    setTaskList(newState)
+  }, 300)
+
+  const onPlay = useCallback(() => {
+    const toTime = dayjs().add(
+      taskList[0].duration - taskList[0].completed,
+      "seconds"
+    )
+    const interval = setInterval(() => {
+      const fromtime = dayjs()
+      const diffSeconds = toTime.diff(fromtime, "seconds")
+      console.log(toTime.toString(), fromtime.toString(), diffSeconds, interval)
+      if (!(diffSeconds >= 0)) {
+        clearInterval(interval)
+        setPaused(true)
+      } else {
+        taskList[0].completed = taskList[0].duration - diffSeconds
+        updateState(taskList)
+        setCurrentTimer(secondsToHHmmss(diffSeconds))
+      }
+    }, 1000)
+    setIntervalId(interval)
+  }, [taskList, updateState])
+
+  const onPause = useCallback(() => {
+    intervalId && clearInterval(intervalId)
+  }, [intervalId])
+
+  const onPausePlayButtonClicked = useCallback(
+    (isPaused: undefined | boolean) => () => {
+      let pause = paused
+      if (isPaused !== undefined) {
+        pause = !isPaused
+      }
+      if (pause) {
+        if (taskList[0].duration !== taskList[0].completed) {
+          onPlay()
+          setPaused(!pause)
+        }
+      } else {
+        onPause()
+        setPaused(!pause)
+      }
+    },
+    [onPause, onPlay, paused, taskList]
+  )
 
   const onDragEnd = (result: DropResult): void => {
     // dropped outside the list
@@ -182,19 +241,19 @@ const CounterContainer = () => {
       result.source.index,
       result.destination.index
     )
-
     setTaskList(items)
   }
 
-  const updateState = debounce((newState: TaskItemType[]) => {
-    setTaskList(newState)
-  }, 500)
-
   const handleTimeIncrementDecrement = (by: number) => () => {
     const newTaskList = cloneDeep(taskList)
-    const duration = newTaskList[0].duration + by
+    const remDuration = newTaskList[0].duration - newTaskList[0].completed
+    const duration = remDuration + by * 60
     newTaskList[0].duration = duration >= 0 ? duration : 0
     setTaskList(newTaskList)
+    if (!paused) {
+      onPause()
+      onPlay()
+    }
   }
 
   return (
@@ -205,12 +264,17 @@ const CounterContainer = () => {
         <IncDecButton onClick={handleTimeIncrementDecrement(5)}>
           +5
         </IncDecButton>
-        <PausePlayButton paused={paused} onClick={() => setPaused((p) => !p)} />
+        <PausePlayButton
+          paused={paused}
+          onClick={onPausePlayButtonClicked(undefined)}
+        />
         <IncDecButton onClick={handleTimeIncrementDecrement(-5)}>
           -5
         </IncDecButton>
       </Controller>
-      <DragDropContext onDragEnd={onDragEnd}>
+      <DragDropContext
+        onDragEnd={onDragEnd}
+        onDragStart={onPausePlayButtonClicked(true)}>
         <Droppable droppableId="droppable">
           {(provided, snapshot): JSX.Element => (
             <div
@@ -237,7 +301,7 @@ const CounterContainer = () => {
                             if (ind === index) {
                               return {
                                 ...item,
-                                title: e.currentTarget?.value,
+                                title: e.currentTarget?.value.trim(),
                               }
                             }
                             return item
@@ -248,14 +312,14 @@ const CounterContainer = () => {
                       />
                       <TaskController>
                         <DurationInput
-                          value={item.duration}
+                          value={secondsToMinutes(item.duration)}
                           type="number"
                           onChange={(e) => {
                             const newArr = taskList.map((item, ind) => {
                               if (ind === index) {
                                 return {
                                   ...item,
-                                  duration: +e.currentTarget?.value,
+                                  duration: +e.currentTarget?.value * 60,
                                 }
                               }
                               return item
@@ -284,7 +348,9 @@ const CounterContainer = () => {
                           Reset
                         </TaskControl>
                         <TaskControl>Complete</TaskControl>
-                        <CompleteTimeDiv>{item.completed}</CompleteTimeDiv>
+                        <CompleteTimeDiv>
+                          {secondsToHHmmss(item.completed)}
+                        </CompleteTimeDiv>
                       </TaskController>
                     </TaskCard>
                   )}

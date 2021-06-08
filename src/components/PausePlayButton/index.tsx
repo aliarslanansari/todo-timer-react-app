@@ -6,6 +6,10 @@ import PlayButtonIcon from "../../Assets/Icons/PlayButtonIcon"
 const playPauseStyle = css`
   height: 30px;
   cursor: pointer;
+  transition: transform 0.2s;
+  &:hover {
+    transform: scale(1.1);
+  }
 `
 const StyledPauseButtonIcon = styled(PauseButtonIcon)`
   ${playPauseStyle}
@@ -28,4 +32,4 @@ const PausePlayButton = ({
   )
 }
 
-export default PausePlayButton
+export default React.memo(PausePlayButton)
