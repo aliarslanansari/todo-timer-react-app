@@ -153,6 +153,9 @@ const DurationInput = styled.input`
   &:focus {
     border-radius: 6px;
   }
+  &:disabled {
+    color: gray;
+  }
 `
 
 const CounterContainer = () => {
