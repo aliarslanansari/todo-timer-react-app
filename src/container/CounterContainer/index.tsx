@@ -314,6 +314,7 @@ const CounterContainer = () => {
                         <DurationInput
                           value={secondsToMinutes(item.duration)}
                           type="number"
+                          disabled={index === 0}
                           onChange={(e) => {
                             const newArr = taskList.map((item, ind) => {
                               if (ind === index) {
